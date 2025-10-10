@@ -1247,9 +1247,9 @@ Shipping location-To be delivered at in the state of Punjab, Haryana, Maharastra
           {/* Footer Notes Section */}
           <div className="p-6 bg-gray-50 rounded-xl">
             <div className="flex flex-col mb-4 space-y-2 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
-              {/* <h4 className="text-lg font-semibold text-gray-900">
-                Footer Notes
-              </h4> */}
+              <h4 className="text-lg font-semibold text-gray-900">
+                
+              </h4>
               {!editingFooterNotes ? (
                 <button
                   onClick={() => setEditingFooterNotes(true)}
