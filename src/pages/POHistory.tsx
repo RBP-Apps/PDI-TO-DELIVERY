@@ -437,7 +437,7 @@ const POHistory = () => {
             <h1 className="mb-2 text-2xl font-bold text-gray-900">
               PO History
             </h1>
-            <p className="text-gray-600">Approve, cancle or reject PO</p>
+            <p className="text-gray-600">Approve, Cancel or reject PO</p>
           </div>
           <div className="flex gap-3 items-center">
             {error && (
