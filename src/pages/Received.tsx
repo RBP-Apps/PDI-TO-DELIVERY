@@ -74,6 +74,14 @@ const POList = () => {
   const [lrNo, setLrNo] = useState("");
   const [billDate, setBillDate] = useState("");
 
+
+
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+const [historyData, setHistoryData] = useState<POItem[]>([]);
+const [historyLoading, setHistoryLoading] = useState(false);
+
+
+
   const SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbxqx00B7oSgwGlyCgUb1ONM-lBc-xuQUb1ykUIfY_rdZIK8l1xDN_AnSA66gONNBSdH/exec";
 
@@ -107,40 +115,42 @@ const POList = () => {
     return errors;
   };
 
-  const handleFieldUpdate = (_id: string, field: keyof POItem, value: any) => {
-    if (!selectedItem) return;
+ 
 
-    // Convert value to number if it's a numeric field
-    const numericFields = [
-      "Gross Amount",
-      "PO Amount",
-      "Tax Amount",
-      "Total Amount",
-      "PO Qty",
-      "Received Qty",
-      "Rate",
-    ];
-    const updatedValue = numericFields.includes(field)
-      ? value === ""
-        ? 0
-        : Number(value)
-      : value;
+const fetchHistoryData = async () => {
+  try {
+    setHistoryLoading(true);
+    const targetUrl = `${SCRIPT_URL}?sheet=Received History`;
+    const url = import.meta.env.DEV ? `/gas?sheet=Received History` : targetUrl;
+    
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const json = await response.json();
+    if (json.error) throw new Error(json.error);
+    
+    const headerRowIndex = 0; // Adjust based on your sheet structure
+    const dataRows = json.data.slice(headerRowIndex + 1);
+    
+    const transformedData = dataRows.map((row: any[]) => ({
+      "Planning No": String(row[1] || ""),
+      "Bill No": String(row[5] || ""),
+      "Bill Date": String(row[6] || ""),
+      "Bill Amount": Number(row[7] || 0),
+      "Bill Image": String(row[9] || ""),
 
-    setSelectedItem((prev) => ({
-      ...prev!,
-      [field]: updatedValue,
+      "PO No": String(row[12] || ""), // Adjust column index
+      "Firm Name": String(row[13] || ""), // Get from PO sheet mapping
+      "Vendor Name": String(row[14] || ""),
     }));
-  };
-
-  // Google Apps Script URL
-
-  // Utility functions for caching
-  const cacheSet = (key: string, data: any, ttlMs = 1000 * 60 * 60) => {
-    try {
-      const payload = { data, expires: Date.now() + ttlMs };
-      localStorage.setItem(key, JSON.stringify(payload));
-    } catch {}
-  };
+    
+    setHistoryData(transformedData);
+  } catch (err) {
+    console.error("History fetch error:", err);
+  } finally {
+    setHistoryLoading(false);
+  }
+};
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -663,6 +673,16 @@ const POList = () => {
           />
           Refresh
         </button>
+
+        <button
+  onClick={() => {
+    setShowHistoryModal(true);
+    fetchHistoryData();
+  }}
+  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm hover:bg-gray-50"
+>
+  History
+</button>
       </div>
 
       {/* Table */}
@@ -820,6 +840,66 @@ const POList = () => {
         </div>
       </div>
 
+
+
+      {/* History Modal */}
+{showHistoryModal && (
+  <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="flex justify-center items-center min-h-screen px-4">
+      <div className="fixed inset-0 bg-gray-500 opacity-75" onClick={() => setShowHistoryModal(false)} />
+      
+      <div className="relative bg-white rounded-xl shadow-2xl max-w-6xl w-full p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Received History</h3>
+          <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        {historyLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="w-10 h-10 border-t-2 border-blue-500 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {["Planning No", "PO No", "Firm Name", "Vendor Name", "Invoice No", "Invoice Date", "Bill Amount", "Invoice Copy"].map(header => (
+                    <th key={header} className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {historyData.map((item, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-3">{item["Planning No"]}</td>
+                    <td className="px-4 py-3">{item["PO No"]}</td>
+                    <td className="px-4 py-3">{item["Firm Name"]}</td>
+                    <td className="px-4 py-3">{item["Vendor Name"]}</td>
+                    <td className="px-4 py-3">{item["Bill No"]}</td>
+                    <td className="px-4 py-3">{formatDateToDDMMYYYY(item["Bill Date"])}</td>
+                    <td className="px-4 py-3">₹{item["Bill Amount"]?.toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      {item["Bill Image"] && (
+                        <a href={item["Bill Image"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          View
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Financial Details Modal */}
       {showModal && selectedGroup && groupItems.length > 0 && (
         <div className="overflow-y-auto fixed inset-0 z-50">
@@ -925,15 +1005,6 @@ const POList = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Bill Image
                             </label>
-                            {/* <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                  setBillImage(e.target.files?.[0]?.name || "")
-                                }
-                                className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                disabled={isSubmitting}
-                              /> */}
                             <input
                               type="file"
                               accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
