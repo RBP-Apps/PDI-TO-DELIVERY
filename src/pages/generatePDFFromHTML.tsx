@@ -3,6 +3,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import ReactDOM from "react-dom/client";
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // PDF Template Component
 const PDFTemplate = ({ data, firmData }) => {
   // console.log("FirmData", firmData);
@@ -644,24 +646,61 @@ export const generatePDFFromHTML = async (data, firmData, APPS_SCRIPT_URL) => {
     const root = ReactDOM.createRoot(container);
     await new Promise((resolve) => {
       root.render(<PDFTemplate data={data} firmData={firmData} />);
-      setTimeout(resolve, 500); // Wait for rendering
+      setTimeout(resolve, 100); // Wait for rendering
     });
 
     // Generate canvas from HTML
     const canvas = await html2canvas(container.firstChild, {
-      scale: 2,
+      scale: 5, // ✅ Reduce from 2 to 1.5 (30% faster)
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
+      allowTaint: true, // ✅ Add this
+      imageTimeout: 0, // ✅ Add this (skip image loading timeout)
+      removeContainer: false, // ✅ Add this
     });
 
-    // Create PDF
+    // Create PDF 1st in one page not auto paginate
+
+
+  
     const pdf = new jsPDF("p", "mm", "a4");
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+
+
+
+    // Create PDF with auto-pagination
+    // const pdf = new jsPDF("p", "mm", "a4");
+    // const imgData = canvas.toDataURL("image/jpeg", 1.0); // ✅ Use JPEG with maximum quality
+    // const imgWidth = pdf.internal.pageSize.getWidth();
+    // const imgHeight = (canvas.height * imgWidth) / canvas.width; // ✅ Calculate actual height
+    // const pageHeight = pdf.internal.pageSize.getHeight();
+
+    // let heightLeft = imgHeight;
+    // let position = 0;
+
+    // // ✅ Add first page
+    // pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+    // heightLeft -= pageHeight;
+
+    // // ✅ Add additional pages if content overflows
+    // while (heightLeft > 0) {
+    //   position = heightLeft - imgHeight;
+    //   pdf.addPage();
+    //   pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+    //   heightLeft -= pageHeight;
+    // }
+
+
+
+    pdf.saveGraphicsState();
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+    pdf.restoreGraphicsState();
 
     // Cleanup
     document.body.removeChild(container);
