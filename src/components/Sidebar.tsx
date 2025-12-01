@@ -7,7 +7,7 @@ import {
   FileText,
   Package,
   CreditCard,
-  Building,
+
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -27,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: "PO Generator", href: "/po-generator", icon: FileText },
     { name: "PO History", href: "/po-history", icon: FileText },
     { name: "Received", href: "/received", icon: Package },
+    { name: "Report", href:"/Report", icon:Package},
     { name: "Payment", href: "/payment", icon: CreditCard },
     { name: "Payment History", href: "/payment-history", icon: CreditCard },
   ];

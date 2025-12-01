@@ -32,6 +32,8 @@ interface POItem {
   Planned: string;
   Actual: string;
   Status: string;
+  GST: number;
+  ReceivedQty: number;
 
   "Bill Type": string;
   "Bill No": string;
@@ -41,6 +43,7 @@ interface POItem {
   "Bill Image": string;
   "Transporter Name": string;
   "LR No.": string;
+  TransportCharge?: number;
 }
 
 type GroupedPOItem = {
@@ -73,12 +76,12 @@ const POList = () => {
   const [transporterName, setTransporterName] = useState("");
   const [lrNo, setLrNo] = useState("");
   const [billDate, setBillDate] = useState("");
-
+  const [transportCharge, setTransportCharge] = useState('');
 
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-const [historyData, setHistoryData] = useState<POItem[]>([]);
-const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyData, setHistoryData] = useState<POItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
 
 
@@ -93,13 +96,8 @@ const [historyLoading, setHistoryLoading] = useState(false);
 
     // Validate numeric fields are positive numbers
     const numericFields = [
-      "Gross Amount",
-      "PO Amount",
-      "Tax Amount",
-      "Total Amount",
-      "PO Qty",
-      "Received Qty",
-      "Rate",
+      'Gross Amount', 'PO Amount', 'Tax Amount', 'Total Amount',
+      'PO Qty', 'Received Qty', 'Rate', 'TransportCharge' // ADD THIS
     ];
     numericFields.forEach((field) => {
       const value = formData[field as keyof POItem];
@@ -115,42 +113,42 @@ const [historyLoading, setHistoryLoading] = useState(false);
     return errors;
   };
 
- 
 
-const fetchHistoryData = async () => {
-  try {
-    setHistoryLoading(true);
-    const targetUrl = `${SCRIPT_URL}?sheet=Received History`;
-    const url = import.meta.env.DEV ? `/gas?sheet=Received History` : targetUrl;
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const json = await response.json();
-    if (json.error) throw new Error(json.error);
-    
-    const headerRowIndex = 0; // Adjust based on your sheet structure
-    const dataRows = json.data.slice(headerRowIndex + 1);
-    
-    const transformedData = dataRows.map((row: any[]) => ({
-      "Planning No": String(row[1] || ""),
-      "Bill No": String(row[5] || ""),
-      "Bill Date": String(row[6] || ""),
-      "Bill Amount": Number(row[7] || 0),
-      "Bill Image": String(row[9] || ""),
 
-      "PO No": String(row[12] || ""), // Adjust column index
-      "Firm Name": String(row[13] || ""), // Get from PO sheet mapping
-      "Vendor Name": String(row[14] || ""),
-    }));
-    
-    setHistoryData(transformedData);
-  } catch (err) {
-    console.error("History fetch error:", err);
-  } finally {
-    setHistoryLoading(false);
-  }
-};
+  const fetchHistoryData = async () => {
+    try {
+      setHistoryLoading(true);
+      const targetUrl = `${SCRIPT_URL}?sheet=Received History`;
+      const url = import.meta.env.DEV ? `/gas?sheet=Received History` : targetUrl;
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const json = await response.json();
+      if (json.error) throw new Error(json.error);
+
+      const headerRowIndex = 0; // Adjust based on your sheet structure
+      const dataRows = json.data.slice(headerRowIndex + 1);
+
+      const transformedData = dataRows.map((row: any[]) => ({
+        "Planning No": String(row[1] || ""),
+        "Bill No": String(row[5] || ""),
+        "Bill Date": String(row[6] || ""),
+        "Bill Amount": Number(row[7] || 0),
+        "Bill Image": String(row[9] || ""),
+
+        "PO No": String(row[12] || ""), // Adjust column index
+        "Firm Name": String(row[13] || ""), // Get from PO sheet mapping
+        "Vendor Name": String(row[14] || ""),
+      }));
+
+      setHistoryData(transformedData);
+    } catch (err) {
+      console.error("History fetch error:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,10 +217,9 @@ const fetchHistoryData = async () => {
         } catch (uploadError) {
           // console.error("File upload error:", uploadError);
           throw new Error(
-            `File upload failed: ${
-              uploadError instanceof Error
-                ? uploadError.message
-                : "Unknown error"
+            `File upload failed: ${uploadError instanceof Error
+              ? uploadError.message
+              : "Unknown error"
             }`
           );
         }
@@ -243,6 +240,10 @@ const fetchHistoryData = async () => {
           billImageUrl || "", // Bill Image (J) - column 9
           transporterName || "", // Transporter Name (K) - column 10
           lrNo || "", // LR No. (L) - column 11
+          "",
+          "",
+          "",
+          Number(transportCharge) || 0,
         ];
 
         const params = new URLSearchParams();
@@ -354,6 +355,7 @@ const fetchHistoryData = async () => {
       group.items.map((item) => ({
         ...item,
         "Received Qty": item["Received Qty"] || 0,
+
       }))
     );
 
@@ -367,7 +369,7 @@ const fetchHistoryData = async () => {
     setDiscountAmount(firstItem["Discount Amount"]?.toString() || "");
     setTransporterName(firstItem["Transporter Name"] || "");
     setLrNo(firstItem["LR No."] || "");
-
+    setTransportCharge(firstItem.TransportCharge?.toString() || '');
     setShowModal(true);
   };
 
@@ -466,7 +468,7 @@ const fetchHistoryData = async () => {
             "LR No.": String(row[32] || ""), // LR No.
             status: String(row[33] || ""), // Receiving Status
             Remarks: String(row[34] || ""), // Remarks
-
+            TransportCharge: Number(row[15]) || 0,
             "Product Rate": Number(row[44] || 0), // Product Rate
           };
         });
@@ -623,14 +625,13 @@ const fetchHistoryData = async () => {
   };
 
   const calculateTotalAmount = (item: POItem) => {
-    const receivedQty = Number(item["Received Qty"]) || 0;
-    const rate = Number(item["Rate"]) || 0;
-    const gst = Number(item["GST %"]) || 0;
-
+    const receivedQty = Number(item.ReceivedQty) || 0;
+    const rate = Number(item.Rate) || 0;
+    const gst = Number(item.GST) || 0;
+    const transportCharge = Number(item.TransportCharge) || 0;
     const baseAmount = receivedQty * rate;
     const gstAmount = baseAmount * (gst / 100);
-    const total = baseAmount + gstAmount;
-
+    const total = baseAmount + gstAmount + transportCharge; // Added transport charge
     return total.toFixed(2);
   };
 
@@ -675,14 +676,14 @@ const fetchHistoryData = async () => {
         </button>
 
         <button
-  onClick={() => {
-    setShowHistoryModal(true);
-    fetchHistoryData();
-  }}
-  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm hover:bg-gray-50"
->
-  History
-</button>
+          onClick={() => {
+            setShowHistoryModal(true);
+            fetchHistoryData();
+          }}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm hover:bg-gray-50"
+        >
+          History
+        </button>
       </div>
 
       {/* Table */}
@@ -843,62 +844,62 @@ const fetchHistoryData = async () => {
 
 
       {/* History Modal */}
-{showHistoryModal && (
-  <div className="fixed inset-0 z-50 overflow-y-auto">
-    <div className="flex justify-center items-center min-h-screen px-4">
-      <div className="fixed inset-0 bg-gray-500 opacity-75" onClick={() => setShowHistoryModal(false)} />
-      
-      <div className="relative bg-white rounded-xl shadow-2xl max-w-6xl w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Received History</h3>
-          <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex justify-center items-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-gray-500 opacity-75" onClick={() => setShowHistoryModal(false)} />
+
+            <div className="relative bg-white rounded-xl shadow-2xl max-w-6xl w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Received History</h3>
+                <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-10 h-10 border-t-2 border-blue-500 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {["Planning No", "PO No", "Firm Name", "Vendor Name", "Invoice No", "Invoice Date", "Bill Amount", "Invoice Copy"].map(header => (
+                          <th key={header} className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {historyData.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-3">{item["Planning No"]}</td>
+                          <td className="px-4 py-3">{item["PO No"]}</td>
+                          <td className="px-4 py-3">{item["Firm Name"]}</td>
+                          <td className="px-4 py-3">{item["Vendor Name"]}</td>
+                          <td className="px-4 py-3">{item["Bill No"]}</td>
+                          <td className="px-4 py-3">{formatDateToDDMMYYYY(item["Bill Date"])}</td>
+                          <td className="px-4 py-3">₹{item["Bill Amount"]?.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            {item["Bill Image"] && (
+                              <a href={item["Bill Image"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                View
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        
-        {historyLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="w-10 h-10 border-t-2 border-blue-500 rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  {["Planning No", "PO No", "Firm Name", "Vendor Name", "Invoice No", "Invoice Date", "Bill Amount", "Invoice Copy"].map(header => (
-                    <th key={header} className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {historyData.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-3">{item["Planning No"]}</td>
-                    <td className="px-4 py-3">{item["PO No"]}</td>
-                    <td className="px-4 py-3">{item["Firm Name"]}</td>
-                    <td className="px-4 py-3">{item["Vendor Name"]}</td>
-                    <td className="px-4 py-3">{item["Bill No"]}</td>
-                    <td className="px-4 py-3">{formatDateToDDMMYYYY(item["Bill Date"])}</td>
-                    <td className="px-4 py-3">₹{item["Bill Amount"]?.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      {item["Bill Image"] && (
-                        <a href={item["Bill Image"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          View
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Financial Details Modal */}
       {showModal && selectedGroup && groupItems.length > 0 && (
@@ -1104,6 +1105,21 @@ const fetchHistoryData = async () => {
                               className="block px-2 py-1 w-full text-xs text-gray-500 bg-gray-50 rounded border border-gray-200 sm:px-3 sm:py-2 sm:w-full sm:text-sm"
                             />
                           </div>
+                          <div className="sm:col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Transport Charge
+                            </label>
+                            <input
+                              type="number"
+                              value={transportCharge}
+                              onChange={e => setTransportCharge(e.target.value)}
+                              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                              placeholder="0"
+                              min="0"
+                              step="0.01"
+                              disabled={isSubmitting}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1192,6 +1208,9 @@ const fetchHistoryData = async () => {
                                 <th className="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap sm:px-4 sm:py-3">
                                   Received Qty
                                 </th>
+                                <th className="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap sm:px-4 sm:py-3">
+                                  Remaining Qty
+                                </th>
 
                                 <th className="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase whitespace-nowrap sm:px-4 sm:py-3">
                                   Rate
@@ -1274,7 +1293,15 @@ const fetchHistoryData = async () => {
                                       min="0"
                                     />
                                   </td>
-
+                                  <td className="px-2 py-2 whitespace-nowrap sm:px-4 sm:py-3">
+                                    <input
+                                      type="number"
+                                      value={item.Qty ? (Number(item.Qty) - Number(item["Received Qty"] || 0)) : 0}
+                                      readOnly
+                                      className="block px-2 py-1 w-20 text-xs bg-gray-50 border border-gray-200 rounded sm:px-3 sm:py-2 sm:w-32 sm:text-sm"
+                                      min="0"
+                                    />
+                                  </td>
                                   {/* Make Rate editable */}
                                   <td className="px-2 py-2 whitespace-nowrap sm:px-4 sm:py-3">
                                     <input

@@ -18,6 +18,7 @@ import Payment from "./pages/Payment";
 import Received from "./pages/Received";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import PaymentHistory from "./pages/PaymentHistory";
+import Report from "./pages/Report"
 
 // Layout wrapper component that uses the layout context
 const LayoutWrapper = () => {
@@ -101,6 +102,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Received />
+                    </ProtectedRoute>
+                  }
+                />
+                 <Route
+                  path="/report"
+                  element={
+                    <ProtectedRoute>
+                      <Report />
                     </ProtectedRoute>
                   }
                 />
