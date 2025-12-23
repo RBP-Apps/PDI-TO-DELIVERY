@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Eye, RotateCw, X } from "lucide-react";
+import { Search, Eye, RotateCw, X, ChevronRight } from "lucide-react";
 import { useLayout } from "../contexts/LayoutContext";
 
 interface POItem {
@@ -76,14 +76,11 @@ const POList = () => {
   const [transporterName, setTransporterName] = useState("");
   const [lrNo, setLrNo] = useState("");
   const [billDate, setBillDate] = useState("");
-  const [transportCharge, setTransportCharge] = useState('');
-
+  const [transportCharge, setTransportCharge] = useState("");
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyData, setHistoryData] = useState<POItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-
-
 
   const SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbxqx00B7oSgwGlyCgUb1ONM-lBc-xuQUb1ykUIfY_rdZIK8l1xDN_AnSA66gONNBSdH/exec";
@@ -96,8 +93,14 @@ const POList = () => {
 
     // Validate numeric fields are positive numbers
     const numericFields = [
-      'Gross Amount', 'PO Amount', 'Tax Amount', 'Total Amount',
-      'PO Qty', 'Received Qty', 'Rate', 'TransportCharge' // ADD THIS
+      "Gross Amount",
+      "PO Amount",
+      "Tax Amount",
+      "Total Amount",
+      "PO Qty",
+      "Received Qty",
+      "Rate",
+      "TransportCharge", // ADD THIS
     ];
     numericFields.forEach((field) => {
       const value = formData[field as keyof POItem];
@@ -113,13 +116,13 @@ const POList = () => {
     return errors;
   };
 
-
-
   const fetchHistoryData = async () => {
     try {
       setHistoryLoading(true);
       const targetUrl = `${SCRIPT_URL}?sheet=Received History`;
-      const url = import.meta.env.DEV ? `/gas?sheet=Received History` : targetUrl;
+      const url = import.meta.env.DEV
+        ? `/gas?sheet=Received History`
+        : targetUrl;
 
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -149,7 +152,6 @@ const POList = () => {
       setHistoryLoading(false);
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,9 +219,10 @@ const POList = () => {
         } catch (uploadError) {
           // console.error("File upload error:", uploadError);
           throw new Error(
-            `File upload failed: ${uploadError instanceof Error
-              ? uploadError.message
-              : "Unknown error"
+            `File upload failed: ${
+              uploadError instanceof Error
+                ? uploadError.message
+                : "Unknown error"
             }`
           );
         }
@@ -355,7 +358,6 @@ const POList = () => {
       group.items.map((item) => ({
         ...item,
         "Received Qty": item["Received Qty"] || 0,
-
       }))
     );
 
@@ -369,7 +371,7 @@ const POList = () => {
     setDiscountAmount(firstItem["Discount Amount"]?.toString() || "");
     setTransporterName(firstItem["Transporter Name"] || "");
     setLrNo(firstItem["LR No."] || "");
-    setTransportCharge(firstItem.TransportCharge?.toString() || '');
+    setTransportCharge(firstItem.TransportCharge?.toString() || "");
     setShowModal(true);
   };
 
@@ -377,7 +379,6 @@ const POList = () => {
     try {
       setLoading(true);
       setError(null);
-
 
       // console.log("[POList] Fetching fresh data from server...");
       const targetUrl = `${SCRIPT_URL}?sheet=PO`;
@@ -481,7 +482,6 @@ const POList = () => {
         }
       }
 
-
       const approvedData = transformedData.filter(
         (item) => item.Status !== "Complete" && item.poStatus === "Approved"
       );
@@ -571,8 +571,6 @@ const POList = () => {
       );
     }
   );
-
-  // console.log("filteredGroupedData", filteredGroupedData);
 
   // Loading and error states
   if (loading) {
@@ -727,18 +725,27 @@ const POList = () => {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleViewClick(group)}
-                              className="text-sm text-blue-600 hover:text-blue-900"
+                              className="overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-xl px-4 py-3 group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                               title="View All Items"
                             >
-                              <Eye className="mr-1 w-4 h-4" />
-                              form ({group.itemCount} items)
+                              <div className="flex items-center justify-center">
+                                <Eye className="w-5 h-5 text-blue-600 mr-2 group-hover:text-blue-700 transition-colors" />
+                                <span className="font-medium text-blue-700 group-hover:text-blue-800">
+                                  View Form
+                                </span>
+                                <span className="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                  {group.itemCount}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-blue-500 ml-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                             </button>
                             {item["PO Copy"] && (
                               <button
                                 onClick={() =>
                                   window.open(item["PO Copy"], "_blank")
                                 }
-                                className="text-blue-600 hover:text-blue-900"
+                                 className="overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-xl px-4 py-3 group transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                                 title="View PO Copy"
                               >
                                 <svg
@@ -841,18 +848,22 @@ const POList = () => {
         </div>
       </div>
 
-
-
       {/* History Modal */}
       {showHistoryModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex justify-center items-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-gray-500 opacity-75" onClick={() => setShowHistoryModal(false)} />
+            <div
+              className="fixed inset-0 bg-gray-500 opacity-75"
+              onClick={() => setShowHistoryModal(false)}
+            />
 
             <div className="relative bg-white rounded-xl shadow-2xl max-w-6xl w-full p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Received History</h3>
-                <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -866,8 +877,20 @@ const POList = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        {["Planning No", "PO No", "Firm Name", "Vendor Name", "Invoice No", "Invoice Date", "Bill Amount", "Invoice Copy"].map(header => (
-                          <th key={header} className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase">
+                        {[
+                          "Planning No",
+                          "PO No",
+                          "Firm Name",
+                          "Vendor Name",
+                          "Invoice No",
+                          "Invoice Date",
+                          "Bill Amount",
+                          "Invoice Copy",
+                        ].map((header) => (
+                          <th
+                            key={header}
+                            className="px-4 py-3 text-xs font-medium text-left text-gray-500 uppercase"
+                          >
                             {header}
                           </th>
                         ))}
@@ -881,11 +904,20 @@ const POList = () => {
                           <td className="px-4 py-3">{item["Firm Name"]}</td>
                           <td className="px-4 py-3">{item["Vendor Name"]}</td>
                           <td className="px-4 py-3">{item["Bill No"]}</td>
-                          <td className="px-4 py-3">{formatDateToDDMMYYYY(item["Bill Date"])}</td>
-                          <td className="px-4 py-3">₹{item["Bill Amount"]?.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            {formatDateToDDMMYYYY(item["Bill Date"])}
+                          </td>
+                          <td className="px-4 py-3">
+                            ₹{item["Bill Amount"]?.toLocaleString()}
+                          </td>
                           <td className="px-4 py-3">
                             {item["Bill Image"] && (
-                              <a href={item["Bill Image"]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              <a
+                                href={item["Bill Image"]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
                                 View
                               </a>
                             )}
@@ -1112,7 +1144,9 @@ const POList = () => {
                             <input
                               type="number"
                               value={transportCharge}
-                              onChange={e => setTransportCharge(e.target.value)}
+                              onChange={(e) =>
+                                setTransportCharge(e.target.value)
+                              }
                               className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
                               placeholder="0"
                               min="0"
@@ -1296,7 +1330,12 @@ const POList = () => {
                                   <td className="px-2 py-2 whitespace-nowrap sm:px-4 sm:py-3">
                                     <input
                                       type="number"
-                                      value={item.Qty ? (Number(item.Qty) - Number(item["Received Qty"] || 0)) : 0}
+                                      value={
+                                        item.Qty
+                                          ? Number(item.Qty) -
+                                            Number(item["Received Qty"] || 0)
+                                          : 0
+                                      }
                                       readOnly
                                       className="block px-2 py-1 w-20 text-xs bg-gray-50 border border-gray-200 rounded sm:px-3 sm:py-2 sm:w-32 sm:text-sm"
                                       min="0"
