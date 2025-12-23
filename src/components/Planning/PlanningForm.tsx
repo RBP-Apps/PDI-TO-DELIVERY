@@ -1132,21 +1132,7 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
     setProducts([]);
   };
 
-  // const getVendorOptions = () => {
-  //   // Filter vendors based on selected item type
-  //   if (formData.itemType && normalizeStr(formData.itemType) === "pump") {
-  //     return ["Pump Solutions Pvt Ltd"];
-  //   }
 
-  //   if (formData.itemType && itemTypeToVendors[formData.itemType]) {
-  //     const filtered = Array.from(
-  //       new Set(itemTypeToVendors[formData.itemType])
-  //     );
-  //     return filtered.length > 0 ? filtered : vendorOptionsFlat;
-  //   }
-  //   // If no item type selected or no mapping available, return all vendors
-  //   return vendorOptionsFlat;
-  // };
 
   const getVendorOptions = () => {
     // Filter vendors based on selected item type
@@ -1155,10 +1141,6 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
     }
 
     const normalizedItemType = normalizeStr(formData.itemType);
-
-    if (normalizedItemType === "pump") {
-      return ["Pump Solutions Pvt Ltd"];
-    }
 
     // Try exact match first
     if (itemTypeToVendors[formData.itemType]) {
@@ -1211,8 +1193,6 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  // console.log("getVendorOptions()", getVendorOptions());
 
   return (
     <div className="overflow-hidden fixed inset-0 z-50">
