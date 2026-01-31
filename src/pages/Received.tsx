@@ -252,7 +252,7 @@ const POList = () => {
           Number(item["Received Qty"]) || 0, // Received Qty (E) - column 4
           billNo, // Bill No (F) - column 5
           billDate, // Bill Date (G) - column 6
-          Number(calculatedGrandTotal.toFixed(2)), // Bill Amount (H) - column 7 (Calculated Grand Total)
+          Number(calculateTotalAmount(item)), // Bill Amount (H) - column 7 (Item Total)
           Number(discountAmount) || 0, // Discount Amount (I) - column 8
           billImageUrl || "", // Bill Image (J) - column 9
           transporterName || "", // Transporter Name (K) - column 10
@@ -260,7 +260,8 @@ const POList = () => {
           "",
           "",
           "",
-          Number(transportCharge) || 0,
+          Number(transportCharge) || 0, // Transport Charge (P) - column 15
+          Number(calculatedGrandTotal.toFixed(2)), // Total Amount (Q) - column 16 (Grand Total)
         ];
 
         const params = new URLSearchParams();
